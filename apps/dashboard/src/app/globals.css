@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+/* The Skin Sensé brand tokens (mirrors packages/shared/src/brand.ts) */
+@theme {
+  --color-plum-deep: #4a0e3f;
+  --color-plum: #6e165e;
+  --color-berry: #702963;
+  --color-plum-line: #6e2a62;
+  --color-lilac: #fdf2ff;
+  --color-blush: #fef7f8;
+  --color-ink: #212121;
+  --color-muted: #6b5866;
+  --color-line: #ebd9e6;
+  --color-gold: #b8935a;
+  --color-gold-text: #8a6a3a;
+  --color-champagne: #f3e3c7;
+  --color-cream: #fffcf7;
+  --color-ok: #2f7d5b;
+  --color-warn: #b4690e;
+  --color-danger: #b3261e;
+
+  --font-display: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
+  --font-sans: var(--font-merriweather-sans), "Merriweather Sans", system-ui, sans-serif;
+}
+
+html,
+body {
+  background: var(--color-blush);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+a {
+  color: var(--color-plum);
+}
+a:hover {
+  color: var(--color-plum-deep);
+}
+
+/* Shared form + table styling for the dashboard */
+@layer components {
+  .field {
+    @apply w-full rounded-xl border border-line bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-plum focus:ring-2 focus:ring-plum/15;
+  }
+  .label {
+    @apply mb-1 block text-xs font-medium text-muted;
+  }
+  .btn {
+    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-full bg-plum px-4 text-sm font-semibold text-white transition hover:bg-plum-deep disabled:opacity-50;
+  }
+  .btn-ghost {
+    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-line bg-white px-4 text-sm font-medium text-plum transition hover:border-plum;
+  }
+  .btn-gold {
+    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-full bg-gold px-4 text-sm font-semibold text-[#2a0823] transition hover:brightness-95;
+  }
+  .card {
+    @apply rounded-2xl border border-line bg-white;
+  }
+  .table {
+    @apply w-full text-left text-sm;
+  }
+  .table th {
+    @apply border-b border-line px-4 py-3 text-xs font-medium uppercase tracking-wider text-muted;
+  }
+  .table td {
+    @apply border-b border-line/60 px-4 py-3 align-top;
+  }
+  .eyebrow {
+    @apply text-[10px] font-medium uppercase tracking-[0.2em] text-gold-text;
+  }
+  .h-display {
+    @apply font-display font-medium text-plum-deep;
+  }
+}

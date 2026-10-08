@@ -1,0 +1,20 @@
+{
+  "name": "skinsense-app",
+  "private": true,
+  "version": "0.1.0",
+  "description": "The Skin Sensé — patient app (Expo) and clinic dashboard (Next.js) on Supabase",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:dashboard": "npm run dev --workspace @skinsense/dashboard",
+    "dev:mobile": "npm run start --workspace @skinsense/mobile",
+    "build:dashboard": "npm run build --workspace @skinsense/dashboard",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "db:types": "npx supabase gen types typescript --project-id kniwkgszwqqzgtecpory > packages/shared/src/database.types.ts"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
