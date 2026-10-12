@@ -68,7 +68,7 @@ async function RoleHome() {
           </>
         ) : null}
 
-        {me.role === "pharmacy" ? <Dispensary days={14} /> : null}
+        {me.role === "pharmacy" ? <Dispensary days={14} linkPatients={false} /> : null}
 
         {me.role === "centre_manager" ? (
           <>

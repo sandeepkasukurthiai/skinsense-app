@@ -17,6 +17,6 @@ export default function PrescriptionsPage() {
 }
 
 async function Gate() {
-  await requireStaff(rolesFor("prescriptions"));
-  return <Dispensary days={60} />;
+  const me = await requireStaff(rolesFor("prescriptions"));
+  return <Dispensary days={60} linkPatients={rolesFor("patients").includes(me.role)} />;
 }

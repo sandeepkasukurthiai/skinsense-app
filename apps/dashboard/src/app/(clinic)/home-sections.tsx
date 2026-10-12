@@ -226,7 +226,7 @@ export async function BillsDue() {
 
 /* ---------- Pharmacy ---------- */
 
-export async function Dispensary({ days = 30 }: { days?: number }) {
+export async function Dispensary({ days = 30, linkPatients = true }: { days?: number; linkPatients?: boolean }) {
   const supabase = await createClient();
   const since = new Date(Date.now() - days * 86_400_000).toISOString();
   const { data } = await supabase
@@ -244,9 +244,13 @@ export async function Dispensary({ days = 30 }: { days?: number }) {
           {data.map((rx) => (
             <article key={rx.id} className="card space-y-3 p-5">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <Link href={`/patients/${rx.patients?.id}`} className="font-display text-2xl font-semibold text-plum-deep">
-                  {rx.patients?.full_name}
-                </Link>
+                {linkPatients ? (
+                  <Link href={`/patients/${rx.patients?.id}`} className="font-display text-2xl font-semibold text-plum-deep">
+                    {rx.patients?.full_name}
+                  </Link>
+                ) : (
+                  <span className="font-display text-2xl font-semibold text-plum-deep">{rx.patients?.full_name}</span>
+                )}
                 <span className="text-xs text-muted">{formatDateTime(rx.signed_at)}</span>
               </div>
               <p className="text-xs text-muted">
