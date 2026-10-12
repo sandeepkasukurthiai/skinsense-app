@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 import { Badge, Empty, PageHeader, Skeleton, Stat } from "@/components/ui";
-import { requireStaff } from "@/lib/dal";
+import { requireStaff, rolesFor } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
 
 export default function BillingPage() {
@@ -18,7 +18,7 @@ export default function BillingPage() {
 }
 
 async function Invoices() {
-  await requireStaff();
+  await requireStaff(rolesFor("billing"));
   const supabase = await createClient();
   const { data } = await supabase
     .from("invoices")

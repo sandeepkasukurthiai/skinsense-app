@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 import { Badge, Empty, PageHeader, Section, Skeleton } from "@/components/ui";
-import { requireStaff } from "@/lib/dal";
+import { requireStaff, rolesFor } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
 
 import { approveMessage, discardMessage } from "../actions";
@@ -25,7 +25,7 @@ export default function MessagesPage() {
 }
 
 async function Approvals() {
-  await requireStaff();
+  await requireStaff(rolesFor("messages"));
   const supabase = await createClient();
   const { data } = await supabase
     .from("message_log")
@@ -66,7 +66,7 @@ async function Approvals() {
 const tone = { sent: "ok", delivered: "ok", queued: "plum", failed: "danger", cancelled: "muted", draft: "muted", pending_approval: "gold" } as const;
 
 async function Log() {
-  await requireStaff();
+  await requireStaff(rolesFor("messages"));
   const supabase = await createClient();
   const { data } = await supabase
     .from("message_log")

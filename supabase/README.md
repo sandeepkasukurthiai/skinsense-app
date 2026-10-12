@@ -23,6 +23,8 @@ To bring their SQL into this folder: `npx supabase link --project-ref kniwkgszwq
 ## Added by this codebase
 
 - `20261008150000_09_public_clinicians.sql` — read-only `v_clinicians` view so patients can see their doctor's name.
+- `20261012090000_10_patient_rpcs.sql` — `claim_patient_profile`, `open_slots`, `book_appointment` (patient self-service without a server secret).
+- `20261012100000_11_more_staff_roles.sql` — adds `staff`, `pharmacy`, `centre_manager`, `operations_head` to `app_role` (eight-role model).
 
 ## Model at a glance
 

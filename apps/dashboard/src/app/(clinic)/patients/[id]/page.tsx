@@ -13,7 +13,7 @@ import { Suspense } from "react";
 
 import { ActionForm } from "@/components/action-form";
 import { Badge, Empty, PageHeader, Section, Skeleton } from "@/components/ui";
-import { requireStaff } from "@/lib/dal";
+import { requireStaff, rolesFor } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
 
 import {
@@ -36,7 +36,7 @@ export default function PatientPage({ params }: PageProps<"/patients/[id]">) {
 }
 
 async function PatientRecord({ params }: { params: PageProps<"/patients/[id]">["params"] }) {
-  const me = await requireStaff();
+  const me = await requireStaff(rolesFor("patients"));
   const { id } = await params;
   const supabase = await createClient();
   const isClinician = CLINICIAN_ROLES.includes(me.role);

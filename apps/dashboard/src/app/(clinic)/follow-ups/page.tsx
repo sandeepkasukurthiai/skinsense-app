@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 import { Badge, Empty, PageHeader, Skeleton } from "@/components/ui";
-import { requireStaff } from "@/lib/dal";
+import { requireStaff, rolesFor } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
 
 import { nudgeDrift } from "../actions";
@@ -24,7 +24,7 @@ export default function FollowUpsPage() {
 }
 
 async function DriftList() {
-  await requireStaff();
+  await requireStaff(rolesFor("follow-ups"));
   const supabase = await createClient();
   const { data } = await supabase.from("v_drift").select("*").order("rank_score", { ascending: false }).limit(100);
 

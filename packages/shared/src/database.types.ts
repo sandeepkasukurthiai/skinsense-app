@@ -682,6 +682,18 @@ export type Database = {
       }
     }
     Functions: {
+      book_appointment: {
+        Args: { p_patient?: string; p_provider: string; p_service: string; p_starts: string }
+        Returns: string
+      }
+      claim_patient_profile: {
+        Args: { p_concern?: string; p_dob?: string; p_full_name?: string }
+        Returns: Database["public"]["Tables"]["patients"]["Row"] | null
+      }
+      open_slots: {
+        Args: { p_date: string; p_service: string }
+        Returns: { ends_at: string; provider_id: string; provider_name: string; starts_at: string }[]
+      }
       create_plan_from_protocol: {
         Args: { p_patient: string; p_protocol: string; p_provider: string; p_start?: string }
         Returns: string
@@ -702,7 +714,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "patient" | "front_desk" | "doctor" | "owner"
+      app_role: "patient" | "front_desk" | "doctor" | "owner" | "staff" | "pharmacy" | "centre_manager" | "operations_head"
       appt_source: "app" | "phone" | "whatsapp" | "walk_in"
       appt_status: "booked" | "arrived" | "in_chair" | "completed" | "no_show" | "cancelled"
       consent_kind: "clinical" | "referral" | "marketing" | "telemed"
@@ -735,7 +747,7 @@ export type Enums<T extends keyof PublicSchema["Enums"]> = PublicSchema["Enums"]
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["patient", "front_desk", "doctor", "owner"],
+      app_role: ["patient", "front_desk", "doctor", "owner", "staff", "pharmacy", "centre_manager", "operations_head"],
       appt_source: ["app", "phone", "whatsapp", "walk_in"],
       appt_status: ["booked", "arrived", "in_chair", "completed", "no_show", "cancelled"],
       consent_kind: ["clinical", "referral", "marketing", "telemed"],

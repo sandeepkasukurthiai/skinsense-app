@@ -1,18 +1,39 @@
 import { toE164India } from "@skinsense/shared";
 import { useState } from "react";
-import { KeyboardAvoidingView, Platform, StyleSheet, TextInput, View } from "react-native";
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View,
+  type TextInputProps,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { supabase } from "@/lib/supabase";
-import { Button } from "@/ui/components";
 import { Text } from "@/ui/Text";
-import { colors, font, radii, space } from "@/ui/theme";
+import { colors, font, space } from "@/ui/theme";
 
-/** Phone + OTP sign-in (Supabase Auth, SMS provider configured in the Supabase dashboard). */
+type Mode = "phone" | "email";
+
+const noir = "#16050F";
+const goldBright = "#D8B77E";
+
+/**
+ * Patient sign-in — the app's entrance. Default: mobile number + SMS one-time code
+ * (needs an SMS provider or test numbers in Supabase → Authentication → Phone).
+ * Alternative: email + password, for demo accounts and until SMS is live.
+ */
 export default function SignIn() {
+  const [mode, setMode] = useState<Mode>("phone");
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
   const [sentTo, setSentTo] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,107 +58,183 @@ export default function SignIn() {
     // On success the session listener routes to onboarding or home.
   }
 
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.plumDeep }}>
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
-        <View style={st.hero}>
-          <View style={st.mark}>
-            <Text style={{ fontFamily: font.displaySemi, fontSize: 34, color: colors.champagne }}>S</Text>
-          </View>
-          <Text style={{ fontFamily: font.display, fontSize: 40, color: colors.white, textAlign: "center" }}>
-            The Skin Sensé
-          </Text>
-          <Text variant="eyebrow" style={{ color: "#E2C79A" }}>
-            Banjara Hills · Hyderabad
-          </Text>
-          <Text style={{ fontFamily: font.displayItalic, fontSize: 20, color: "#EAD3E3", textAlign: "center" }}>
-            Diagnosis-first dermatology, in your pocket.
-          </Text>
-        </View>
+  async function signInWithEmail() {
+    if (!email.trim() || !password) return setError("Enter your email and password.");
+    setBusy(true);
+    setError(null);
+    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+    setBusy(false);
+    if (error) setError(error.message === "Invalid login credentials" ? "Incorrect email or password." : error.message);
+  }
 
-        <View style={st.sheet}>
-          {!sentTo ? (
-            <>
-              <Text variant="heading">Sign in with your mobile</Text>
-              <Text variant="caption">We’ll send a one-time code by SMS. Use the number registered at the clinic.</Text>
-              <View style={st.inputRow}>
-                <Text variant="bodyStrong" style={{ color: colors.muted }}>
-                  +91
-                </Text>
-                <TextInput
+  function switchMode(next: Mode) {
+    setMode(next);
+    setError(null);
+    setSentTo(null);
+  }
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: noir }}>
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
+        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: "space-between" }} keyboardShouldPersistTaps="handled">
+          <View style={st.hero}>
+            <View style={st.mark}>
+              <Text style={{ fontFamily: font.displaySemi, fontSize: 30, color: colors.champagne }}>S</Text>
+            </View>
+            <Text style={st.brand}>The Skin Sensé</Text>
+            <Text style={st.eyebrow}>Banjara Hills · Hyderabad</Text>
+            <View style={st.rule} />
+            <Text style={st.headline}>
+              Your skin,{"\n"}
+              <Text style={{ fontFamily: font.displayItalic, fontSize: 42, lineHeight: 44, color: colors.champagne }}>in good hands.</Text>
+            </Text>
+          </View>
+
+          <View style={st.card}>
+            <View pointerEvents="none" style={st.cardFrame} />
+            <Text style={st.portal}>VIII · Patient</Text>
+
+            {mode === "email" ? (
+              <>
+                <Text style={st.cardTitle}>Welcome back</Text>
+                <LuxField label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoComplete="email" />
+                <LuxField
+                  label="Password"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                  autoComplete="current-password"
+                  onSubmitEditing={signInWithEmail}
+                />
+                <LuxButton label="Enter" onPress={signInWithEmail} busy={busy} />
+              </>
+            ) : !sentTo ? (
+              <>
+                <Text style={st.cardTitle}>Welcome</Text>
+                <Text style={st.cardBody}>We’ll send a one-time code to the number registered at the clinic.</Text>
+                <LuxField
+                  label="Mobile number"
+                  prefix="+91"
                   value={phone}
                   onChangeText={setPhone}
                   keyboardType="phone-pad"
                   autoComplete="tel"
                   placeholder="98765 43210"
-                  placeholderTextColor="#A893A3"
-                  accessibilityLabel="Mobile number"
-                  style={st.input}
                   maxLength={14}
                 />
-              </View>
-              <Button label="Send code" onPress={sendCode} loading={busy} />
-            </>
-          ) : (
-            <>
-              <Text variant="heading">Enter the 6-digit code</Text>
-              <Text variant="caption">Sent to {sentTo}</Text>
-              <TextInput
-                value={code}
-                onChangeText={setCode}
-                keyboardType="number-pad"
-                autoComplete="one-time-code"
-                textContentType="oneTimeCode"
-                maxLength={6}
-                accessibilityLabel="One-time code"
-                style={[st.inputRow, st.input, { letterSpacing: 8, textAlign: "center", fontSize: 22 }]}
-              />
-              <Button label="Verify & continue" onPress={verify} loading={busy} disabled={code.length < 6} />
-              <Button label="Use a different number" variant="ghost" onPress={() => setSentTo(null)} />
-            </>
-          )}
-          {error ? (
-            <Text variant="caption" style={{ color: colors.danger }}>
-              {error}
-            </Text>
-          ) : null}
-        </View>
+                <LuxButton label="Send code" onPress={sendCode} busy={busy} />
+              </>
+            ) : (
+              <>
+                <Text style={st.cardTitle}>Enter your code</Text>
+                <Text style={st.cardBody}>Sent to {sentTo}</Text>
+                <LuxField
+                  label="6-digit code"
+                  value={code}
+                  onChangeText={setCode}
+                  keyboardType="number-pad"
+                  autoComplete="one-time-code"
+                  textContentType="oneTimeCode"
+                  maxLength={6}
+                  style={{ letterSpacing: 10, textAlign: "center" }}
+                />
+                <LuxButton label="Verify" onPress={verify} busy={busy} disabled={code.length < 6} />
+                <Pressable onPress={() => setSentTo(null)} accessibilityRole="button" style={st.link}>
+                  <Text style={st.linkText}>Use a different number</Text>
+                </Pressable>
+              </>
+            )}
+
+            {error ? <Text style={st.error}>{error}</Text> : null}
+
+            <Pressable onPress={() => switchMode(mode === "phone" ? "email" : "phone")} accessibilityRole="button" style={st.link}>
+              <Text style={st.linkText}>{mode === "phone" ? "Sign in with email instead" : "Sign in with mobile number instead"}</Text>
+            </Pressable>
+          </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
+function LuxField({ label, prefix, style, ...input }: TextInputProps & { label: string; prefix?: string }) {
+  return (
+    <View style={{ gap: 4 }}>
+      <Text style={st.fieldLabel}>{label}</Text>
+      <View style={st.fieldRow}>
+        {prefix ? <Text style={[st.fieldText, { color: colors.muted }]}>{prefix}</Text> : null}
+        <TextInput placeholderTextColor="#B9A6B4" accessibilityLabel={label} {...input} style={[st.fieldText, { flex: 1, paddingVertical: 10 }, style]} />
+      </View>
+    </View>
+  );
+}
+
+function LuxButton({ label, onPress, busy, disabled }: { label: string; onPress: () => void; busy?: boolean; disabled?: boolean }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={busy || disabled}
+      accessibilityRole="button"
+      style={({ pressed }) => [st.button, { opacity: disabled ? 0.5 : pressed ? 0.85 : 1 }]}
+    >
+      {busy ? <ActivityIndicator color={colors.champagne} /> : <Text style={st.buttonText}>{label}</Text>}
+    </Pressable>
+  );
+}
+
 const st = StyleSheet.create({
-  hero: { flex: 1, alignItems: "center", justifyContent: "center", gap: space.md, paddingHorizontal: space.xxl },
+  hero: { alignItems: "center", paddingTop: 56, paddingHorizontal: space.xxl, gap: 10 },
   mark: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: colors.plum,
+    width: 76,
+    height: 76,
+    borderRadius: 38,
     borderWidth: 1,
-    borderColor: colors.gold,
+    borderColor: goldBright,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: space.sm,
+    marginBottom: 6,
   },
-  sheet: {
-    backgroundColor: colors.blush,
-    borderTopLeftRadius: radii.lg + 4,
-    borderTopRightRadius: radii.lg + 4,
-    padding: space.xxl,
-    paddingBottom: 40,
-    gap: space.lg,
+  brand: { fontFamily: font.displaySemi, fontSize: 30, color: colors.white, letterSpacing: 0.5 },
+  eyebrow: { fontFamily: font.bodyMedium, fontSize: 10, letterSpacing: 3.2, textTransform: "uppercase", color: goldBright },
+  rule: { width: 48, height: 1, backgroundColor: goldBright, opacity: 0.6, marginVertical: 14 },
+  headline: { fontFamily: font.display, fontSize: 42, lineHeight: 44, color: colors.white, textAlign: "center" },
+  card: {
+    margin: space.xl,
+    marginTop: 40,
+    backgroundColor: colors.cream,
+    borderRadius: 28,
+    paddingHorizontal: 28,
+    paddingVertical: 34,
+    gap: 18,
   },
-  inputRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: space.md,
-    backgroundColor: colors.white,
+  cardFrame: {
+    position: "absolute",
+    top: 9,
+    left: 9,
+    right: 9,
+    bottom: 9,
+    borderRadius: 21,
     borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.md,
-    paddingHorizontal: space.lg,
-    minHeight: 56,
+    borderColor: "rgba(216,183,126,0.5)",
   },
-  input: { flex: 1, fontFamily: font.bodyMedium, fontSize: 17, color: colors.ink },
+  portal: { fontFamily: font.bodyMedium, fontSize: 10, letterSpacing: 3, textTransform: "uppercase", color: colors.goldText, textAlign: "center" },
+  cardTitle: { fontFamily: font.display, fontSize: 34, color: colors.plumDeep, textAlign: "center", marginTop: -6 },
+  cardBody: { fontFamily: font.body, fontSize: 13, lineHeight: 19, color: colors.muted, textAlign: "center" },
+  fieldLabel: { fontFamily: font.bodyMedium, fontSize: 10, letterSpacing: 2.6, textTransform: "uppercase", color: colors.goldText },
+  fieldRow: { flexDirection: "row", alignItems: "center", gap: 10, borderBottomWidth: 1, borderBottomColor: "#E7D6C0" },
+  fieldText: { fontFamily: font.display, fontSize: 24, color: colors.plumDeep },
+  button: {
+    minHeight: 56,
+    borderRadius: 999,
+    backgroundColor: noir,
+    borderWidth: 1,
+    borderColor: "rgba(184,147,90,0.7)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 6,
+  },
+  buttonText: { fontFamily: font.bodySemi, fontSize: 12, letterSpacing: 3.4, textTransform: "uppercase", color: colors.champagne },
+  link: { alignSelf: "center", minHeight: 44, justifyContent: "center" },
+  linkText: { fontFamily: font.bodyMedium, fontSize: 12, color: colors.plum },
+  error: { fontFamily: font.body, fontSize: 12, color: colors.danger, textAlign: "center" },
 });

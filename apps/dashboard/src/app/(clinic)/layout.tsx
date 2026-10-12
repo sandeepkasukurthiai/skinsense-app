@@ -1,4 +1,4 @@
-import { clinic } from "@skinsense/shared";
+import { clinic, roleProfiles } from "@skinsense/shared";
 import { Suspense } from "react";
 
 import { requireStaff } from "@/lib/dal";
@@ -16,11 +16,13 @@ export default function ClinicLayout({ children }: LayoutProps<"/">) {
           </span>
           <div>
             <p className="font-display text-xl font-semibold leading-none">{clinic.name}</p>
-            <p className="mt-1 text-[9px] uppercase tracking-[0.22em] text-[#e2c79a]">Clinic dashboard</p>
+            <Suspense fallback={<p className="mt-1 text-[9px] uppercase tracking-[0.22em] text-[#e2c79a]">Clinic dashboard</p>}>
+              <PortalName />
+            </Suspense>
           </div>
         </div>
-        <Suspense fallback={<NavLinks static />}>
-          <NavLinks />
+        <Suspense fallback={<NavLinks items={["today"]} static />}>
+          <RoleNav />
         </Suspense>
         <div className="mt-auto hidden border-t border-plum-line pt-4 lg:block">
           <Suspense fallback={<p className="text-xs text-[#d9bfd2]">…</p>}>
@@ -33,13 +35,23 @@ export default function ClinicLayout({ children }: LayoutProps<"/">) {
   );
 }
 
+async function PortalName() {
+  const me = await requireStaff();
+  return <p className="mt-1 text-[9px] uppercase tracking-[0.22em] text-[#e2c79a]">{roleProfiles[me.role].portal} portal</p>;
+}
+
+async function RoleNav() {
+  const me = await requireStaff();
+  return <NavLinks items={roleProfiles[me.role].nav} />;
+}
+
 async function StaffBadge() {
   const me = await requireStaff();
   return (
     <div className="flex items-center justify-between gap-2">
       <div>
         <p className="text-sm font-medium">{me.name}</p>
-        <p className="text-xs capitalize text-[#d9bfd2]">{me.role.replace("_", " ")}</p>
+        <p className="text-xs text-[#d9bfd2]">{roleProfiles[me.role].portal}</p>
       </div>
       <form action={signOut}>
         <button type="submit" className="rounded-full border border-plum-line px-3 py-1.5 text-xs text-champagne hover:border-gold">

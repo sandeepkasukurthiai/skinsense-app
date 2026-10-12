@@ -1,9 +1,9 @@
-import type { Patient } from "@skinsense/shared";
 import { useState } from "react";
 import { StyleSheet, TextInput, View } from "react-native";
 
-import { api } from "@/lib/api";
+import { rpcMessage } from "@/lib/api";
 import { useSession } from "@/lib/session";
+import { supabase } from "@/lib/supabase";
 import { Button, Chip, Screen } from "@/ui/components";
 import { Text } from "@/ui/Text";
 import { colors, font, radii, space } from "@/ui/theme";
@@ -24,17 +24,14 @@ export default function Onboarding() {
     if (dob && !/^\d{4}-\d{2}-\d{2}$/.test(dob)) return setError("Date of birth should look like 1995-08-21.");
     setBusy(true);
     setError(null);
-    try {
-      await api<{ patient: Patient }>("/api/patient/claim", {
-        method: "POST",
-        body: { full_name: name.trim(), dob: dob || null, presenting_concern: concern },
-      });
-      await refreshPatient();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not create your profile.");
-    } finally {
-      setBusy(false);
-    }
+    const { error } = await supabase.rpc("claim_patient_profile", {
+      p_full_name: name.trim(),
+      p_dob: dob || undefined,
+      p_concern: concern ?? undefined,
+    });
+    setBusy(false);
+    if (error) return setError(rpcMessage(error, "Could not create your profile."));
+    await refreshPatient();
   }
 
   return (

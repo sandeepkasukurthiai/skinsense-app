@@ -18,6 +18,9 @@
   --color-ok: #2f7d5b;
   --color-warn: #b4690e;
   --color-danger: #b3261e;
+  --color-noir: #16050f;
+  --color-noir-2: #230a1c;
+  --color-gold-bright: #d8b77e;
 
   --font-display: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
   --font-sans: var(--font-merriweather-sans), "Merriweather Sans", system-ui, sans-serif;
@@ -71,5 +74,53 @@ a:hover {
   }
   .h-display {
     @apply font-display font-medium text-plum-deep;
+  }
+
+  /* Login portals — the entrance */
+  .lux-field {
+    @apply w-full border-0 border-b border-[#e7d6c0] bg-transparent px-0 py-3 font-display text-2xl text-plum-deep outline-none transition placeholder:text-[#b9a6b4] focus:border-gold;
+  }
+  .lux-label {
+    @apply block text-[10px] font-medium uppercase tracking-[0.28em] text-gold-text;
+  }
+  .lux-btn {
+    @apply inline-flex min-h-14 w-full items-center justify-center gap-3 rounded-full bg-noir px-6 text-xs font-semibold uppercase tracking-[0.28em] text-champagne ring-1 ring-gold/60 transition hover:bg-plum-deep hover:ring-gold disabled:opacity-60;
+  }
+}
+
+/* A fine gold frame drawn inside the element, like a foil-stamped card. */
+.lux-frame {
+  position: relative;
+}
+.lux-frame::before {
+  content: "";
+  position: absolute;
+  inset: 10px;
+  border: 1px solid rgb(216 183 126 / 0.45);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+/* Quiet radial light behind the monogram on the dark entrance. */
+.lux-glow {
+  background:
+    radial-gradient(60rem 40rem at 18% 20%, rgb(110 22 94 / 0.55), transparent 60%),
+    radial-gradient(40rem 30rem at 85% 90%, rgb(184 147 90 / 0.12), transparent 60%),
+    var(--color-noir);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .lux-rise {
+    animation: lux-rise 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  @keyframes lux-rise {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
   }
 }

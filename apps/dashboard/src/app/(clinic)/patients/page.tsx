@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 import { Empty, PageHeader, Skeleton } from "@/components/ui";
-import { requireStaff } from "@/lib/dal";
+import { requireStaff, rolesFor } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
 
 export default function PatientsPage({ searchParams }: PageProps<"/patients">) {
@@ -26,7 +26,7 @@ export default function PatientsPage({ searchParams }: PageProps<"/patients">) {
 }
 
 async function PatientList({ searchParams }: { searchParams: PageProps<"/patients">["searchParams"] }) {
-  await requireStaff();
+  await requireStaff(rolesFor("patients"));
   const q = String((await searchParams).q ?? "").trim();
   const supabase = await createClient();
 

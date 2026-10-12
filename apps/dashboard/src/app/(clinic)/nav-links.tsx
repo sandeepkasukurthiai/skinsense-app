@@ -1,30 +1,23 @@
 "use client";
 
+import { navItems, type NavKey } from "@skinsense/shared";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const LINKS = [
-  { href: "/", label: "Today" },
-  { href: "/appointments", label: "Appointments" },
-  { href: "/patients", label: "Patients" },
-  { href: "/follow-ups", label: "Follow-ups" },
-  { href: "/billing", label: "Billing" },
-  { href: "/messages", label: "WhatsApp" },
-] as const;
-
-/** `static` renders without the active state (Suspense fallback for the prerendered shell). */
-export function NavLinks(props: { static?: boolean }) {
-  return props.static ? <Links path={null} /> : <ActiveLinks />;
+/** The role's sections. `static` renders without the active state (Suspense fallback). */
+export function NavLinks(props: { items: NavKey[]; static?: boolean }) {
+  return props.static ? <Links items={props.items} path={null} /> : <ActiveLinks items={props.items} />;
 }
 
-function ActiveLinks() {
-  return <Links path={usePathname()} />;
+function ActiveLinks({ items }: { items: NavKey[] }) {
+  return <Links items={items} path={usePathname()} />;
 }
 
-function Links({ path }: { path: string | null }) {
+function Links({ items, path }: { items: NavKey[]; path: string | null }) {
   return (
     <nav aria-label="Main" className="flex flex-wrap gap-1 lg:flex-col">
-      {LINKS.map((l) => {
+      {items.map((key) => {
+        const l = navItems[key];
         const active = path !== null && (l.href === "/" ? path === "/" : path.startsWith(l.href));
         return (
           <Link

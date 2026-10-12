@@ -4,7 +4,7 @@ import { Suspense } from "react";
 
 import { ActionForm } from "@/components/action-form";
 import { Badge, Empty, PageHeader, Section, Skeleton } from "@/components/ui";
-import { requireStaff } from "@/lib/dal";
+import { requireStaff, rolesFor } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
 
 import { createAppointment } from "../actions";
@@ -26,7 +26,7 @@ export default function AppointmentsPage() {
 }
 
 async function Week() {
-  await requireStaff();
+  await requireStaff(rolesFor("appointments"));
   const supabase = await createClient();
   const from = new Date();
   from.setHours(0, 0, 0, 0);
@@ -75,7 +75,7 @@ async function Week() {
 }
 
 async function NewAppointment() {
-  await requireStaff();
+  await requireStaff(rolesFor("appointments"));
   const supabase = await createClient();
   const [patients, services, doctors] = await Promise.all([
     supabase.from("patients").select("id, full_name, phone").order("full_name").limit(500),

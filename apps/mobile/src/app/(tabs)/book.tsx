@@ -3,8 +3,9 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { Alert, ScrollView, View } from "react-native";
 
-import { api, type Slot } from "@/lib/api";
+import { rpcMessage, type Slot } from "@/lib/api";
 import { fetchServices } from "@/lib/queries";
+import { supabase } from "@/lib/supabase";
 import { useQuery } from "@/lib/useQuery";
 import { Button, Card, Chip, Empty, ErrorNote, Loading, Screen, ScreenHeader, Section } from "@/ui/components";
 import { Text } from "@/ui/Text";
@@ -47,9 +48,15 @@ export default function Book() {
     setSlots(null);
     setPicked(null);
     setSlotError(null);
-    api<{ slots: Slot[] }>(`/api/patient/slots?service_id=${serviceId}&date=${day}`)
-      .then((r) => setSlots(r.slots))
-      .catch((e: Error) => setSlotError(e.message));
+    let live = true;
+    supabase.rpc("open_slots", { p_service: serviceId, p_date: day }).then(({ data, error }) => {
+      if (!live) return;
+      if (error) setSlotError(rpcMessage(error, "Could not load times."));
+      else setSlots(data ?? []);
+    });
+    return () => {
+      live = false;
+    };
   }, [serviceId, day]);
 
   const service = services.data?.find((s) => s.id === serviceId);
@@ -57,17 +64,17 @@ export default function Book() {
   async function confirm() {
     if (!picked || !serviceId) return;
     setBusy(true);
-    try {
-      const res = await api<{ appointment_id: string }>("/api/patient/book", {
-        method: "POST",
-        body: { service_id: serviceId, starts_at: picked.starts_at, provider_id: picked.provider_id },
-      });
-      router.replace(`/appointments/${res.appointment_id}`);
-    } catch (e) {
-      Alert.alert("Couldn’t book", e instanceof Error ? e.message : "Please try another slot.");
-    } finally {
-      setBusy(false);
+    const { data: appointmentId, error } = await supabase.rpc("book_appointment", {
+      p_service: serviceId,
+      p_provider: picked.provider_id,
+      p_starts: picked.starts_at,
+    });
+    setBusy(false);
+    if (error || !appointmentId) {
+      Alert.alert("Couldn’t book", rpcMessage(error, "Please try another slot."));
+      return;
     }
+    router.replace(`/appointments/${appointmentId}`);
   }
 
   return (

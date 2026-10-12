@@ -14,7 +14,9 @@ import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
-import { requireStaff } from "@/lib/dal";
+import { requireStaff, rolesFor } from "@/lib/dal";
+
+const FLOOR_ROLES = ["owner", "doctor", "staff", "front_desk", "centre_manager"] as const;
 import { paymentLinkForInvoice } from "@/lib/razorpay";
 import { createClient } from "@/lib/supabase/server";
 import { deliver, sendTemplate } from "@/lib/whatsapp";
@@ -26,7 +28,7 @@ const str = (fd: FormData, k: string) => String(fd.get(k) ?? "").trim();
 /* ---------- Day board ---------- */
 
 export async function advanceAppointment(formData: FormData) {
-  await requireStaff();
+  await requireStaff([...FLOOR_ROLES]);
   const id = str(formData, "id");
   const to = str(formData, "to") as ApptStatus;
   const supabase = await createClient();
@@ -49,7 +51,7 @@ const PatientInput = z.object({
 });
 
 export async function createPatient(_: ActionState, formData: FormData): Promise<ActionState> {
-  await requireStaff();
+  await requireStaff(rolesFor("patients"));
   const parsed = PatientInput.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check the form" };
   const phone = toE164India(parsed.data.phone);
@@ -73,7 +75,7 @@ export async function createPatient(_: ActionState, formData: FormData): Promise
 }
 
 export async function recordConsent(formData: FormData) {
-  const me = await requireStaff();
+  const me = await requireStaff([...FLOOR_ROLES]);
   const supabase = await createClient();
   await supabase.from("consents").insert({
     patient_id: str(formData, "patient_id"),
@@ -88,7 +90,7 @@ export async function recordConsent(formData: FormData) {
 /* ---------- Appointments ---------- */
 
 export async function createAppointment(_: ActionState, formData: FormData): Promise<ActionState> {
-  await requireStaff();
+  await requireStaff([...FLOOR_ROLES]);
   const supabase = await createClient();
   const patient_id = str(formData, "patient_id");
   const service_id = str(formData, "service_id");
@@ -147,7 +149,7 @@ export async function startPlan(_: ActionState, formData: FormData): Promise<Act
 }
 
 export async function recordSession(_: ActionState, formData: FormData): Promise<ActionState> {
-  const me = await requireStaff();
+  const me = await requireStaff(["owner", "doctor", "staff"]);
   const supabase = await createClient();
   const plan_session_id = str(formData, "plan_session_id");
   const { error } = await supabase.from("session_records").insert({
@@ -217,7 +219,7 @@ export async function addPrescription(_: ActionState, formData: FormData): Promi
 /* ---------- Billing ---------- */
 
 export async function createInvoice(_: ActionState, formData: FormData): Promise<ActionState> {
-  await requireStaff();
+  await requireStaff(rolesFor("billing"));
   const lines: InvoiceLine[] = str(formData, "lines")
     .split("\n")
     .map((l) => l.trim())
@@ -243,7 +245,7 @@ export async function createInvoice(_: ActionState, formData: FormData): Promise
 }
 
 export async function markInvoicePaid(formData: FormData) {
-  await requireStaff();
+  await requireStaff(rolesFor("billing"));
   const supabase = await createClient();
   await supabase
     .from("invoices")
@@ -254,7 +256,7 @@ export async function markInvoicePaid(formData: FormData) {
 }
 
 export async function sendPaymentLink(_: ActionState, formData: FormData): Promise<ActionState> {
-  await requireStaff();
+  await requireStaff(rolesFor("billing"));
   const invoiceId = str(formData, "id");
   const supabase = await createClient();
   const { data: inv } = await supabase.from("invoices").select("id, patients(id, phone, full_name)").eq("id", invoiceId).single();
@@ -272,7 +274,7 @@ export async function sendPaymentLink(_: ActionState, formData: FormData): Promi
 /* ---------- WhatsApp ---------- */
 
 export async function approveMessage(formData: FormData) {
-  const me = await requireStaff();
+  const me = await requireStaff(rolesFor("messages"));
   const id = str(formData, "id");
   const supabase = await createClient();
   const { data } = await supabase
@@ -287,14 +289,14 @@ export async function approveMessage(formData: FormData) {
 }
 
 export async function discardMessage(formData: FormData) {
-  await requireStaff();
+  await requireStaff(rolesFor("messages"));
   const supabase = await createClient();
   await supabase.from("message_log").update({ status: "cancelled" }).eq("id", str(formData, "id")).eq("status", "pending_approval");
   refresh();
 }
 
 export async function nudgeDrift(formData: FormData) {
-  await requireStaff();
+  await requireStaff(rolesFor("follow-ups"));
   const supabase = await createClient();
   const { data: p } = await supabase.from("patients").select("id, phone, full_name").eq("id", str(formData, "patient_id")).single();
   if (!p) return;

@@ -3,7 +3,6 @@ import { createContext, use, useCallback, useEffect, useState, type ReactNode } 
 
 import type { Patient } from "@skinsense/shared";
 
-import { api } from "./api";
 import { supabase } from "./supabase";
 
 type SessionState = {
@@ -37,12 +36,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       return;
     }
     // First sign-in: link an existing clinic record with this phone, if any.
-    try {
-      const res = await api<{ patient: Patient | null }>("/api/patient/claim", { method: "POST", body: {} });
-      setPatient(res.patient);
-    } catch {
-      setPatient(null);
-    }
+    const { data: claimed } = await supabase.rpc("claim_patient_profile");
+    setPatient(claimed?.id ? claimed : null);
   }, []);
 
   useEffect(() => {
